@@ -1,38 +1,35 @@
 # Dependency directories
 node_modules/
-npm-debug.log
-yarn-error.log
-yarn-debug.log
 
-# Build output
+# Production build
 dist/
-build/
-*.tsbuildinfo
 
-# Environment files
+# Environment variables
 .env
 .env.local
-.env.development
-.env.test
-.env.production
+.env.*.local
 
-# IDE files
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
-
-# Logs
+# Log files
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Coverage directory used by tools like istanbul
-coverage/
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Temporary files
-tmp/
-temp/ 
+# MacOS
+.DS_Store
+
+# Migrations (can be generated)
+migrations/
+
+# Coverage reports
+coverage/ 

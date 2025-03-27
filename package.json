@@ -1,39 +1,37 @@
 {
   "name": "enhanced-postgres-mcp-server",
-  "version": "1.0.0",
-  "description": "Enhanced PostgreSQL MCP server with read and write capabilities. Based on @modelcontextprotocol/server-postgres by Anthropic.",
-  "license": "MIT",
-  "author": "Gareth Cottrell",
-  "contributors": [
-    "Anthropic, PBC (https://anthropic.com)"
-  ],
-  "homepage": "https://github.com/garethcottrell/enhanced-postgres-mcp-server",
-  "bugs": "https://github.com/garethcottrell/enhanced-postgres-mcp-server/issues",
+  "version": "0.1.0",
+  "description": "Enhanced PostgreSQL MCP server with migration management",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "enhanced-postgres-mcp": "dist/index.js"
+    "postgres-mcp": "dist/index.js"
   },
-  "files": [
-    "dist"
-  ],
   "scripts": {
-    "build": "tsc && chmod +x dist/*.js",
-    "prepare": "npm run build",
-    "watch": "tsc --watch",
+    "build": "tsc && chmod +x dist/index.js",
     "start": "node dist/index.js",
-    "docker:build": "docker build -t mcp/postgres -f Dockerfile .",
+    "dev": "ts-node-esm src/index.ts",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts",
+    "docker:build": "docker build -t mcp/postgres .",
     "docker:run": "docker run -i --rm mcp/postgres"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.0.1",
-    "pg": "^8.13.0"
+    "@modelcontextprotocol/sdk": "^0.1.0",
+    "pg": "^8.11.3"
   },
   "devDependencies": {
-    "@types/node": "^20.11.5",
-    "@types/pg": "^8.11.10",
-    "shx": "^0.3.4",
-    "typescript": "^5.6.2"
+    "@types/node": "^20.11.24",
+    "@types/pg": "^8.11.2",
+    "@typescript-eslint/eslint-plugin": "^7.1.1",
+    "@typescript-eslint/parser": "^7.1.1",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.2.5",
+    "ts-jest": "^29.1.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -42,10 +40,11 @@
     "mcp",
     "model-context-protocol",
     "claude",
-    "anthropic",
     "postgres",
     "postgresql",
     "database",
-    "llm"
-  ]
+    "migrations"
+  ],
+  "author": "",
+  "license": "MIT"
 }
