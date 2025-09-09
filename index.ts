@@ -8,7 +8,7 @@ import {
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import pg from "pg";
+import * as pg from "pg";
 
 const server = new Server(
   {
