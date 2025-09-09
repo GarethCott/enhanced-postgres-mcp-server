@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/garethcott-enhanced-postgres-mcp-server-badge.png)](https://mseep.ai/app/garethcott-enhanced-postgres-mcp-server)
+
 # PostgreSQL MCP Server (Enhanced)
 
 A Model Context Protocol server that provides both read and write access to PostgreSQL databases. This server enables LLMs to inspect database schemas, execute queries, modify data, and create/modify database schema objects.
