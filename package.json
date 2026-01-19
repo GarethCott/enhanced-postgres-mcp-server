@@ -1,6 +1,6 @@
 {
   "name": "enhanced-postgres-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Enhanced PostgreSQL MCP server with read and write capabilities. Based on @modelcontextprotocol/server-postgres by Anthropic.",
   "license": "MIT",
   "author": "Gareth Cottrell",

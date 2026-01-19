@@ -269,7 +269,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const client = await pool.connect();
     try {
       await client.query("BEGIN TRANSACTION READ ONLY");
-      const result = await client.query(sql);
+      const result = await client.query({
+        name: "read-only-query",
+        text: sql,
+        values: [],
+      });
       return {
         content: [{ type: "text", text: JSON.stringify(result.rows, null, 2) }],
         isError: false,

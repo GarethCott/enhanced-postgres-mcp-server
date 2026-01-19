@@ -183,8 +183,9 @@ docker build -t mcp/postgres -f Dockerfile .
 ## Security Considerations
 
 1. All data modification operations use transactions with proper COMMIT/ROLLBACK handling
-2. Each operation returns the SQL that was executed for transparency
+2. Each operation returns the SQL that was executed for transparency  
 3. The server uses parameterized queries for insert/update operations to prevent SQL injection
+4. **Security Fix (v1.0.2)**: The read-only query tool now uses prepared statements to prevent SQL injection attacks that could bypass transaction isolation by executing multiple statements
 
 ## License
 
