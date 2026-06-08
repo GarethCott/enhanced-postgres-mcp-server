@@ -7,8 +7,14 @@
   "contributors": [
     "Anthropic, PBC (https://anthropic.com)"
   ],
-  "homepage": "https://github.com/garethcottrell/enhanced-postgres-mcp-server",
-  "bugs": "https://github.com/garethcottrell/enhanced-postgres-mcp-server/issues",
+  "homepage": "https://github.com/GarethCott/enhanced-postgres-mcp-server#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GarethCott/enhanced-postgres-mcp-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/GarethCott/enhanced-postgres-mcp-server/issues"
+  },
   "type": "module",
   "main": "dist/index.js",
   "bin": {
