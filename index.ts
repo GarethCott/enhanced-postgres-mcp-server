@@ -9,6 +9,34 @@ import {
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import * as pg from "pg";
+import { gateMutatingSql, requireEnabled } from "./sqlguard-authorize.js";
+
+const CERT_PROPS = {
+  certificate: {
+    type: "string",
+    description:
+      "Optional SQLGuard Execution Certificate JSON (required when SQLGUARD_REQUIRE=1)",
+  },
+  signature: {
+    type: "string",
+    description:
+      "Optional SQLGuard Ed25519 signature (required with certificate when SQLGUARD_REQUIRE=1)",
+  },
+} as const;
+
+async function assertSqlguard(
+  sql: string,
+  args: Record<string, unknown> | undefined,
+): Promise<void> {
+  const blocked = await gateMutatingSql(
+    sql,
+    (args?.certificate as string | undefined) ?? null,
+    (args?.signature as string | undefined) ?? null,
+  );
+  if (blocked) {
+    throw new Error(blocked);
+  }
+}
 
 const server = new Server(
   {
@@ -106,11 +134,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "execute",
-        description: "Execute a SQL statement that modifies data (INSERT, UPDATE, DELETE)",
+        description:
+          "Execute a SQL statement that modifies data (INSERT, UPDATE, DELETE)" +
+          (requireEnabled()
+            ? " — SQLGUARD_REQUIRE: needs verified PASS certificate+signature"
+            : ""),
         inputSchema: {
           type: "object",
           properties: {
             sql: { type: "string" },
+            ...CERT_PROPS,
           },
         },
       },
@@ -125,6 +158,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: "object",
               additionalProperties: true
             },
+            ...CERT_PROPS,
           },
           required: ["table", "data"],
         },
@@ -141,6 +175,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               additionalProperties: true
             },
             where: { type: "string" },
+            ...CERT_PROPS,
           },
           required: ["table", "data", "where"],
         },
@@ -153,6 +188,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             table: { type: "string" },
             where: { type: "string" },
+            ...CERT_PROPS,
           },
           required: ["table", "where"],
         },
@@ -182,7 +218,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 type: "string",
                 description: "Table-level constraints like PRIMARY KEY, FOREIGN KEY, etc."
               }
-            }
+            },
+            ...CERT_PROPS,
           },
           required: ["tableName", "columns"]
         },
@@ -198,7 +235,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             returnType: { type: "string" },
             language: { type: "string", description: "plpgsql, sql, etc." },
             body: { type: "string" },
-            options: { type: "string", description: "Additional function options" }
+            options: { type: "string", description: "Additional function options" },
+            ...CERT_PROPS,
           },
           required: ["name", "parameters", "returnType", "language", "body"]
         },
@@ -218,7 +256,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               items: { type: "string", description: "INSERT, UPDATE, DELETE" } 
             },
             forEach: { type: "string", description: "ROW or STATEMENT" },
-            condition: { type: "string", description: "Optional WHEN condition" }
+            condition: { type: "string", description: "Optional WHEN condition" },
+            ...CERT_PROPS,
           },
           required: ["name", "tableName", "functionName", "when", "events", "forEach"]
         },
@@ -237,7 +276,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             unique: { type: "boolean" },
             type: { type: "string", description: "BTREE, HASH, GIN, GIST, etc." },
-            where: { type: "string", description: "Optional condition" }
+            where: { type: "string", description: "Optional condition" },
+            ...CERT_PROPS,
           },
           required: ["tableName", "indexName", "columns"]
         },
@@ -253,7 +293,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: "string", 
               description: "ADD COLUMN, DROP COLUMN, ALTER COLUMN, etc." 
             },
-            details: { type: "string", description: "Specific details for the operation" }
+            details: { type: "string", description: "Specific details for the operation" },
+            ...CERT_PROPS,
           },
           required: ["tableName", "operation", "details"]
         },
@@ -291,6 +332,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
   } else if (request.params.name === "execute") {
     const sql = request.params.arguments?.sql as string;
+    await assertSqlguard(sql, request.params.arguments as Record<string, unknown>);
 
     const client = await pool.connect();
     try {
@@ -320,6 +362,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   } else if (request.params.name === "insert") {
     const table = request.params.arguments?.table as string;
     const data = request.params.arguments?.data as Record<string, any>;
+    await assertSqlguard(
+      `INSERT INTO ${table}`,
+      request.params.arguments as Record<string, unknown>,
+    );
     
     const client = await pool.connect();
     try {
@@ -353,6 +399,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const table = request.params.arguments?.table as string;
     const data = request.params.arguments?.data as Record<string, any>;
     const where = request.params.arguments?.where as string;
+    await assertSqlguard(
+      `UPDATE ${table} SET x=1 WHERE ${where}`,
+      request.params.arguments as Record<string, unknown>,
+    );
     
     const client = await pool.connect();
     try {
@@ -385,6 +435,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   } else if (request.params.name === "delete") {
     const table = request.params.arguments?.table as string;
     const where = request.params.arguments?.where as string;
+    await assertSqlguard(
+      `DELETE FROM ${table} WHERE ${where}`,
+      request.params.arguments as Record<string, unknown>,
+    );
     
     const client = await pool.connect();
     try {
@@ -417,7 +471,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       constraints?: string;
     }>;
     const constraints = request.params.arguments?.constraints as Array<string>;
-    
+    await assertSqlguard(
+      `CREATE TABLE ${tableName}`,
+      request.params.arguments as Record<string, unknown>,
+    );
+
     const client = await pool.connect();
     try {
       const columnDefinitions = columns.map(col => {
@@ -457,7 +515,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const language = request.params.arguments?.language as string;
     const body = request.params.arguments?.body as string;
     const options = request.params.arguments?.options as string;
-    
+    await assertSqlguard(
+      `CREATE FUNCTION ${name}`,
+      request.params.arguments as Record<string, unknown>,
+    );
+
     const client = await pool.connect();
     try {
       const createFunctionSQL = `
@@ -500,7 +562,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const events = request.params.arguments?.events as string[];
     const forEach = request.params.arguments?.forEach as string;
     const condition = request.params.arguments?.condition as string;
-    
+    await assertSqlguard(
+      `CREATE TRIGGER ${name} ON ${tableName}`,
+      request.params.arguments as Record<string, unknown>,
+    );
+
     const client = await pool.connect();
     try {
       const eventStr = events.join(' OR ');
@@ -544,7 +610,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const unique = request.params.arguments?.unique as boolean;
     const type = request.params.arguments?.type as string;
     const where = request.params.arguments?.where as string;
-    
+    await assertSqlguard(
+      `CREATE INDEX ${indexName} ON ${tableName}`,
+      request.params.arguments as Record<string, unknown>,
+    );
+
     const client = await pool.connect();
     try {
       const uniqueStr = unique ? 'UNIQUE' : '';
@@ -583,6 +653,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const tableName = request.params.arguments?.tableName as string;
     const operation = request.params.arguments?.operation as string;
     const details = request.params.arguments?.details as string;
+    await assertSqlguard(
+      `ALTER TABLE ${tableName}`,
+      request.params.arguments as Record<string, unknown>,
+    );
     
     const client = await pool.connect();
     try {
