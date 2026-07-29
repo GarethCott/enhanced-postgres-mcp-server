@@ -186,6 +186,7 @@ docker build -t mcp/postgres -f Dockerfile .
 2. Each operation returns the SQL that was executed for transparency  
 3. The server uses parameterized queries for insert/update operations to prevent SQL injection
 4. **Security Fix (v1.0.2)**: The read-only query tool now uses prepared statements to prevent SQL injection attacks that could bypass transaction isolation by executing multiple statements
+5. **Optional SQLGuard authorize-before-mutate**: set `SQLGUARD_REQUIRE=1` to block mutating tools until a verified PASS Execution Certificate is presented (`certificate` + `signature` args). Lint is not authorization. See https://sqlguard.io/INTEGRATE.md · env `SQLGUARD_BASE` (default `https://sqlguard.io`), `SQLGUARD_AGENT`.
 
 ## License
 
